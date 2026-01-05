@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, BedData, WaitingPatient, TreatmentHistory, TreatmentItem, TreatmentStatus, TreatmentType, DirectorTask } from './types';
 import { INITIAL_BED_COUNT, TREATMENT_TIMES, DEFAULT_TREATMENTS } from './constants';
@@ -9,7 +8,16 @@ import { GoogleGenAI } from "@google/genai";
 const { getDatabase, ref, onValue, set, off } = database;
 
 const STORAGE_KEY = 'hanyui_clinic_state_v15';
-const FB_CONFIG_KEY = 'hanyui_firebase_config';
+
+// 원장님의 파이어베이스 설정값 (여기에 다 넣어뒀습니다)
+const firebaseConfig = {
+  apiKey: "AIzaSyBdxPtlCSFwh17aXHRuDjqzKIMDecGQVAM",
+  authDomain: "knew-47fc7.firebaseapp.com",
+  projectId: "knew-47fc7",
+  storageBucket: "knew-47fc7.firebasestorage.app",
+  messagingSenderId: "134628265364",
+  appId: "1:134628265364:web:a1a489726f0f69d01f1381"
+};
 
 export interface FirebaseConfig {
   apiKey: string;
@@ -21,21 +29,10 @@ export interface FirebaseConfig {
   appId: string;
 }
 
-const getStoredFbConfig = (): FirebaseConfig | null => {
-  const saved = localStorage.getItem(FB_CONFIG_KEY);
-  if (saved) {
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      return null;
-    }
-  }
-  return null;
-};
-
-const getFirebaseDb = (config: FirebaseConfig | null) => {
-  if (!config || !config.apiKey || config.apiKey === "YOUR_API_KEY") return null;
+const getFirebaseDb = (config: any) => {
+  if (!config || !config.apiKey) return null;
   try {
+    // 앱이 이미 있으면 가져오고, 없으면 새로 초기화
     const app = getApps().length === 0 ? initializeApp(config) : getApp();
     return getDatabase(app);
   } catch (e) {
@@ -72,15 +69,14 @@ const getInitialLocalState = (): AppState => {
 
 export const useStore = () => {
   const [state, setState] = useState<AppState>(getInitialLocalState());
-  const [fbConfig, setFbConfig] = useState<FirebaseConfig | null>(getStoredFbConfig());
+  // 여기서 위에서 만든 설정값을 바로 사용합니다
+  const [fbConfig, setFbConfig] = useState<any>(firebaseConfig);
   const [isSynced, setIsSynced] = useState(false);
   const isUpdatingFromRemote = useRef(false);
 
-  // Firebase 설정 저장 함수
-  const saveFbConfig = (config: FirebaseConfig) => {
-    localStorage.setItem(FB_CONFIG_KEY, JSON.stringify(config));
+  // 설정 저장 함수 (호환성을 위해 남겨둠)
+  const saveFbConfig = (config: any) => {
     setFbConfig(config);
-    // 페이지 새로고침을 통해 깨끗하게 재연결 유도
     window.location.reload();
   };
 
@@ -128,7 +124,7 @@ export const useStore = () => {
   const refineMemoWithAI = async (bedId: number, currentMemo: string) => {
     if (!currentMemo || currentMemo.trim().length < 2) return;
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `다음은 한의원 환자의 메모입니다. 이를 전문적이고 간결한 의학 용어(한의학 중심)로 요약해서 다시 써줘. (최대 20자 내외): "${currentMemo}"`,
