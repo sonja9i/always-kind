@@ -1,0 +1,5 @@
+{
+  "name": "한의원 치료실 현황판",
+  "description": "한의원 진료 및 치료실 상태를 실시간으로 모니터링하고 관리하는 대시보드 시스템입니다.",
+  "requestFramePermissions": []
+}
